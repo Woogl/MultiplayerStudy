@@ -4,43 +4,50 @@
 #include "PuzzlePlatformsGameInstance.h"
 #include "PlatformTrigger.h"
 #include "Blueprint/UserWidget.h"
+#include "MenuSystem/MainMenu.h"
+#include "MenuSystem/InGameMenu.h"
+#include "MenuSystem/MenuWidget.h"
 
 UPuzzlePlatformsGameInstance::UPuzzlePlatformsGameInstance()
 {
 	ConstructorHelpers::FClassFinder<UUserWidget> BPMenuClass(TEXT("/Game/MenuSystem/WBP_MainMenu"));
-	
-	MenuClass = BPMenuClass.Class;
+	if (BPMenuClass.Succeeded())
+	{
+		MenuClass = BPMenuClass.Class;
+	}
+
+	ConstructorHelpers::FClassFinder<UUserWidget> BPInGameMenuClass(TEXT("/Game/MenuSystem/WBP_InGameMenu"));
+	if (BPInGameMenuClass.Succeeded())
+	{
+		InGameMenuClass = BPInGameMenuClass.Class;
+	}
 }
 
 void UPuzzlePlatformsGameInstance::Init()
 {
 	Super::Init();
-
-	UE_LOG(LogTemp, Warning, TEXT("FoundClass %s"), *MenuClass->GetName());
 }
 
 void UPuzzlePlatformsGameInstance::LoadMenu()
 {
-	UUserWidget* Menu = CreateWidget<UUserWidget>(this, MenuClass);
+	Menu = CreateWidget<UMainMenu>(this, MenuClass);
 	if (!Menu) return;
-	Menu->AddToViewport();
-	Menu->bIsFocusable = true;
-
-	APlayerController* PlayerController = GetFirstLocalPlayerController();
-	if (!PlayerController) return;
 	
-	FInputModeUIOnly InputModeData;
-	InputModeData.SetWidgetToFocus(Menu->TakeWidget());
-	InputModeData.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+	Menu->Setup();
+	Menu->SetMenuInterface(this);
+}
 
-	PlayerController->SetInputMode(InputModeData);
-	PlayerController->bShowMouseCursor = true;
+void UPuzzlePlatformsGameInstance::LoadInGameMenu()
+{
+	UMenuWidget* NewMenu = CreateWidget<UMenuWidget>(this, InGameMenuClass);
+	if (!NewMenu) return;
+
+	NewMenu->Setup();
+	NewMenu->SetMenuInterface(this);
 }
 
 void UPuzzlePlatformsGameInstance::Host()
 {
-	GEngine->AddOnScreenDebugMessage(0, 5.f, FColor::Green, TEXT("Hosting"));
-
 	UWorld* World = GetWorld();
 	if (World)
 	{
