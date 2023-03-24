@@ -34,7 +34,7 @@ void UMenuWidget::Setup()
 
 void UMenuWidget::TearDown()
 {
-	this->RemoveFromViewport();
+	this->RemoveFromParent();
 	this->bIsFocusable = false;
 
 	UWorld* World = GetWorld();

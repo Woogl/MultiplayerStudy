@@ -28,15 +28,6 @@ void UPuzzlePlatformsGameInstance::Init()
 	Super::Init();
 }
 
-void UPuzzlePlatformsGameInstance::LoadMenu()
-{
-	Menu = CreateWidget<UMainMenu>(this, MenuClass);
-	if (!Menu) return;
-	
-	Menu->Setup();
-	Menu->SetMenuInterface(this);
-}
-
 void UPuzzlePlatformsGameInstance::LoadInGameMenu()
 {
 	UMenuWidget* NewMenu = CreateWidget<UMenuWidget>(this, InGameMenuClass);
@@ -63,4 +54,13 @@ void UPuzzlePlatformsGameInstance::Join(const FString& Address)
 	if (!PlayerController) return;
 	
 	PlayerController->ClientTravel(Address, ETravelType::TRAVEL_Absolute);
+}
+
+void UPuzzlePlatformsGameInstance::LoadMainMenu()
+{
+	MYDEBUG("LoadMainMenu");
+	APlayerController* PlayerController = GetFirstLocalPlayerController();
+	if (!PlayerController) return;
+	
+	PlayerController->ClientTravel("/Game/Maps/MainMenu", ETravelType::TRAVEL_Absolute);
 }

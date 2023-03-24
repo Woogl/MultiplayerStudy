@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "MenuInterface.h"
 #include "MenuWidget.h"
 #include "InGameMenu.generated.h"
 
@@ -21,16 +20,14 @@ protected:
 
 private:
 	UPROPERTY(meta = (BindWidget))
-	class UButton* CancleButton;
+	class UButton* CancelButton;
 
 	UPROPERTY(meta = (BindWidget))
 	class UButton* QuitButton;
 
 	UFUNCTION()
-	void Cancle();
+	void CancelPressed();
 
 	UFUNCTION()
-	void OpenMainMenu();
-
-	IMenuInterface* MenuInterface;
+	void QuitPressed();
 };

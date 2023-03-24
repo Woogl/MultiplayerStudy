@@ -9,25 +9,29 @@ bool UInGameMenu::Initialize()
 	bool Success = Super::Initialize();
 	if (!Success) return false;
 
-	return true;
-
-	if (CancleButton)
+	if (CancelButton)
 	{
-		CancleButton->OnClicked.AddDynamic(this, &UInGameMenu::Cancle);
+		CancelButton->OnClicked.AddDynamic(this, &UInGameMenu::CancelPressed);
 	}
 
 	if (QuitButton)
 	{
-		QuitButton->OnClicked.AddDynamic(this, &UInGameMenu::OpenMainMenu);
+		QuitButton->OnClicked.AddDynamic(this, &UInGameMenu::QuitPressed);
 	}
+
+	return true;
 }
 
-void UInGameMenu::Cancle()
+void UInGameMenu::CancelPressed()
 {
-
+	TearDown();
 }
 
-void UInGameMenu::OpenMainMenu()
+void UInGameMenu::QuitPressed()
 {
-
+	if (MenuInterface)
+	{
+		MenuInterface->LoadMainMenu();
+		TearDown();
+	}
 }
