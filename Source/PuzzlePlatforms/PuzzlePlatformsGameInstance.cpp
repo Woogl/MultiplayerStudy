@@ -7,6 +7,7 @@
 #include "MenuSystem/MainMenu.h"
 #include "MenuSystem/InGameMenu.h"
 #include "MenuSystem/MenuWidget.h"
+#include "OnlineSubsystem.h"
 
 UPuzzlePlatformsGameInstance::UPuzzlePlatformsGameInstance()
 {
@@ -26,6 +27,16 @@ UPuzzlePlatformsGameInstance::UPuzzlePlatformsGameInstance()
 void UPuzzlePlatformsGameInstance::Init()
 {
 	Super::Init();
+
+	IOnlineSubsystem* SubSystem = IOnlineSubsystem::Get();
+	if (!SubSystem)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Found %s"), *SubSystem->GetSubsystemName().ToString());
+	}
+	else
+	{
+		MYLOG("subsystem null");
+	}
 }
 
 void UPuzzlePlatformsGameInstance::LoadInGameMenu()
