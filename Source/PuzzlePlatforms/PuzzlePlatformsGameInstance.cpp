@@ -7,7 +7,7 @@
 #include "MenuSystem/MainMenu.h"
 #include "MenuSystem/InGameMenu.h"
 #include "MenuSystem/MenuWidget.h"
-#include "OnlineSubsystem.h"
+#include <../Plugins/Online/OnlineSubsystem/Source/Public/OnlineSubsystem.h>
 
 UPuzzlePlatformsGameInstance::UPuzzlePlatformsGameInstance()
 {
@@ -29,23 +29,34 @@ void UPuzzlePlatformsGameInstance::Init()
 	Super::Init();
 
 	IOnlineSubsystem* SubSystem = IOnlineSubsystem::Get();
-	if (!SubSystem)
+	if (SubSystem != nullptr)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Found %s"), *SubSystem->GetSubsystemName().ToString());
 	}
 	else
 	{
-		MYLOG("subsystem null");
+		MYLOG("Fail to load subsystem");
 	}
+}
+
+void UPuzzlePlatformsGameInstance::LoadMenu()
+{
+	if (!ensure(MenuClass != nullptr)) return;
+
+	Menu = CreateWidget<UMainMenu>(this, MenuClass);
+	if (!ensure(Menu != nullptr)) return;
+
+	Menu->Setup();
+	Menu->SetMenuInterface(this);
 }
 
 void UPuzzlePlatformsGameInstance::LoadInGameMenu()
 {
-	UMenuWidget* NewMenu = CreateWidget<UMenuWidget>(this, InGameMenuClass);
-	if (!NewMenu) return;
+	UMenuWidget* MenuWidget = CreateWidget<UMenuWidget>(this, InGameMenuClass);
+	if (!Menu) return;
 
-	NewMenu->Setup();
-	NewMenu->SetMenuInterface(this);
+	MenuWidget->Setup();
+	MenuWidget->SetMenuInterface(this);
 }
 
 void UPuzzlePlatformsGameInstance::Host()

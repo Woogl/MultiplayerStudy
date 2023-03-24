@@ -21,6 +21,9 @@ public:
 	virtual void Init();
 
 	UFUNCTION(BlueprintCallable)
+	void LoadMenu();
+
+	UFUNCTION(BlueprintCallable)
 	void LoadInGameMenu();
 
 	UFUNCTION(Exec)
@@ -29,6 +32,7 @@ public:
 	UFUNCTION(Exec)
 	void Join(const FString& Address);
 
+	UFUNCTION(BlueprintCallable)
 	virtual void LoadMainMenu() override;
 
 private:
