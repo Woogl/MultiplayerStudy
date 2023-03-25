@@ -27,6 +27,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void LoadInGameMenu();
 
+	// Menu Interface Functions
 	UFUNCTION(Exec)
 	void Host();
 
@@ -35,6 +36,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	virtual void LoadMainMenu() override;
+
+	UFUNCTION()
+	void RefreshServerList() override;
 
 private:
 	TSubclassOf<class UUserWidget> MenuClass;
