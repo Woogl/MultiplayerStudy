@@ -23,14 +23,14 @@ public:
 	virtual void Init();
 
 	UFUNCTION(BlueprintCallable)
-	void LoadMenu();
+	void LoadMenuWidget();
 
 	UFUNCTION(BlueprintCallable)
 	void LoadInGameMenu();
 
 	// Menu Interface Functions
 	UFUNCTION(Exec)
-	void Host();
+	void Host(FString ServerName);
 
 	UFUNCTION(Exec)
 	void Join(uint32 Index);
@@ -55,4 +55,5 @@ private:
 
 	IOnlineSessionPtr SessionInterface;
 	TSharedPtr<class FOnlineSessionSearch> SessionSearch;
+	FString DesiredServerName;
 };

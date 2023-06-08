@@ -7,10 +7,11 @@
 #include "MenuSystem/MainMenu.h"
 #include "MenuSystem/InGameMenu.h"
 #include "MenuSystem/MenuWidget.h"
-#include <../Plugins/Online/OnlineSubsystem/Source/Public/OnlineSessionSettings.h>
+#include <OnlineSessionSettings.h>
 #include "Interfaces/OnlineSessionInterface.h"
 
 const static FName SESSION_NAME = TEXT("My Session Name");
+const static FName SERVER_NAME_SETTINGS_KEY = TEXT("ServerName");
 
 UPuzzlePlatformsGameInstance::UPuzzlePlatformsGameInstance()
 {
@@ -34,7 +35,7 @@ void UPuzzlePlatformsGameInstance::Init()
 	IOnlineSubsystem* SubSystem = IOnlineSubsystem::Get();
 	if (SubSystem != nullptr)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Found %s"), *SubSystem->GetSubsystemName().ToString());
+		UE_LOG(LogTemp, Warning, TEXT("Found subsystem %s"), *SubSystem->GetSubsystemName().ToString());
 		SessionInterface = SubSystem->GetSessionInterface();
 		if (SessionInterface.IsValid())
 		{
@@ -43,6 +44,10 @@ void UPuzzlePlatformsGameInstance::Init()
 			SessionInterface->OnFindSessionsCompleteDelegates.AddUObject(this, &UPuzzlePlatformsGameInstance::OnFindSessionComplete);
 			SessionInterface->OnJoinSessionCompleteDelegates.AddUObject(this, &UPuzzlePlatformsGameInstance::OnJoinSessionComplete);
 		}
+		else
+		{
+			MYLOG("Found no subsystem");
+		}
 	}
 	else
 	{
@@ -50,7 +55,7 @@ void UPuzzlePlatformsGameInstance::Init()
 	}
 }
 
-void UPuzzlePlatformsGameInstance::LoadMenu()
+void UPuzzlePlatformsGameInstance::LoadMenuWidget()
 {
 	if (!ensure(MenuClass != nullptr)) return;
 
@@ -70,8 +75,9 @@ void UPuzzlePlatformsGameInstance::LoadInGameMenu()
 	MenuWidget->SetMenuInterface(this);
 }
 
-void UPuzzlePlatformsGameInstance::Host()
+void UPuzzlePlatformsGameInstance::Host(FString ServerName)
 {
+	DesiredServerName = ServerName;
 	if (SessionInterface.IsValid())
 	{
 		FNamedOnlineSession* ExistingSession = SessionInterface->GetNamedSession(SESSION_NAME);
@@ -146,11 +152,27 @@ void UPuzzlePlatformsGameInstance::OnFindSessionComplete(bool Success)
 {
 	if (Success && SessionSearch.IsValid() && Menu != nullptr)
 	{
-		TArray<FString> ServerNames;
+		UE_LOG(LogTemp, Warning, TEXT("Finished Find Session"));
+		MYDEBUG("Finished Find Session");
+		TArray<FServerData> ServerNames;
 		for (const FOnlineSessionSearchResult& SearchResult : SessionSearch->SearchResults)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Session ID: %s"), *SearchResult.GetSessionIdStr());
-			ServerNames.Add(SearchResult.GetSessionIdStr());
+			UE_LOG(LogTemp, Warning, TEXT("Found Session ID: %s"), *SearchResult.GetSessionIdStr());
+			FServerData Data;
+			Data.Name = SearchResult.GetSessionIdStr();
+			Data.MaxPlayers = SearchResult.Session.SessionSettings.NumPublicConnections;
+			Data.CurrentPlayers = Data.MaxPlayers - SearchResult.Session.NumOpenPublicConnections;
+			Data.HostUsername = SearchResult.Session.OwningUserName;
+			FString ServerName;
+			if (SearchResult.Session.SessionSettings.Get(SERVER_NAME_SETTINGS_KEY, ServerName))
+			{
+				Data.Name = ServerName;
+			}
+			else
+			{
+				Data.Name = TEXT("Could not find server name.");
+			}
+			ServerNames.Add(Data);
 		}
 
 		Menu->SetServerList(ServerNames);
@@ -162,9 +184,10 @@ void UPuzzlePlatformsGameInstance::OnJoinSessionComplete(FName SessionName, EOnJ
 	if (!SessionInterface.IsValid()) return;
 
 	FString Address;
-	if (SessionInterface->GetResolvedConnectString(SessionName, Address))
+	if (!SessionInterface->GetResolvedConnectString(SessionName, Address))
 	{
 		MYDEBUG("Could not get Connect String");
+		return;
 	}
 
 	GEngine->AddOnScreenDebugMessage(0, 5.f, FColor::Green, FString::Printf(TEXT("Joining %s"), *Address));
@@ -180,10 +203,19 @@ void UPuzzlePlatformsGameInstance::CreateSession()
 	if (SessionInterface.IsValid())
 	{
 		FOnlineSessionSettings SessionSettings;
-		SessionSettings.bIsLANMatch = false;
+		if (IOnlineSubsystem::Get()->GetSubsystemName() == "NULL")
+		{
+			SessionSettings.bIsLANMatch = true;
+		}
+		else
+		{
+			SessionSettings.bIsLANMatch = false;
+		}
 		SessionSettings.NumPublicConnections = 2;
 		SessionSettings.bShouldAdvertise = true;
 		SessionSettings.bUsesPresence = true;
+		SessionSettings.bUseLobbiesIfAvailable = true;
+		SessionSettings.Set(SERVER_NAME_SETTINGS_KEY, DesiredServerName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 
 		SessionInterface->CreateSession(0, SESSION_NAME, SessionSettings);
 	}

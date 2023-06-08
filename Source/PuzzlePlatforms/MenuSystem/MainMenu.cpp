@@ -17,18 +17,24 @@ UMainMenu::UMainMenu()
 	}
 }
 
-void UMainMenu::SetServerList(TArray<FString> ServerNames)
+void UMainMenu::SetServerList(TArray<FServerData> ServerNames)
 {
+	UWorld* World = this->GetWorld();
+	if (World == nullptr) return;
+
 	ServerList->ClearChildren();
 
 	uint32 i = 0;
-	for (const FString& ServerName : ServerNames)
+	for (const FServerData& ServerData : ServerNames)
 	{
 		UServerRow* Row = CreateWidget<UServerRow>(this, ServerRowClass);
 		if (!ensure(Row != nullptr)) return;
 
-		Row->ServerName->SetText(FText::FromString(ServerName));
-		Row->SetUp(this, i);
+		Row->ServerName->SetText(FText::FromString(ServerData.Name));
+		Row->HostUser->SetText(FText::FromString(ServerData.HostUsername));
+		FString FractionText = FString::Printf(TEXT("%d/%d"), ServerData.CurrentPlayers, ServerData.MaxPlayers);
+		Row->ConnectionFraction->SetText(FText::FromString(FractionText));
+		Row->Setup(this, i);
 		++i;
 
 		ServerList->AddChild(Row);
@@ -38,6 +44,7 @@ void UMainMenu::SetServerList(TArray<FString> ServerNames)
 void UMainMenu::SelectIndex(uint32 Index)
 {
 	SelectedIndex = Index;
+	UpdateChildren();
 }
 
 bool UMainMenu::Initialize()
@@ -47,7 +54,12 @@ bool UMainMenu::Initialize()
 
 	if (HostButton)
 	{
-		HostButton->OnClicked.AddDynamic(this, &UMainMenu::HostServer);
+		HostButton->OnClicked.AddDynamic(this, &UMainMenu::OpenHostMenu);
+	}
+
+	if (CancelHostMenuButton)
+	{
+		CancelHostMenuButton->OnClicked.AddDynamic(this, &UMainMenu::OpenMainMenu);
 	}
 	
 	if (JoinButton)
@@ -65,6 +77,11 @@ bool UMainMenu::Initialize()
 		ConfirmJoinButton->OnClicked.AddDynamic(this, &UMainMenu::JoinServer);
 	}
 
+	if (ConfirmHostMenuButton)
+	{
+		ConfirmHostMenuButton->OnClicked.AddDynamic(this, &UMainMenu::HostServer);
+	}
+
 	if (QuitButton)
 	{
 		QuitButton->OnClicked.AddDynamic(this, &UMainMenu::QuitPressed);
@@ -77,7 +94,8 @@ void UMainMenu::HostServer()
 {
 	if (MenuInterface)
 	{
-		MenuInterface->Host();
+		FString ServerName = ServerHostName->Text.ToString();
+		MenuInterface->Host(ServerName);
 	}
 }
 
@@ -111,6 +129,11 @@ void UMainMenu::OpenMainMenu()
 	MenuSwitcher->SetActiveWidget(MainMenu);
 }
 
+void UMainMenu::OpenHostMenu()
+{
+	MenuSwitcher->SetActiveWidget(HostMenu);
+}
+
 void UMainMenu::QuitPressed()
 {
 	UWorld* World = GetWorld();
@@ -120,5 +143,17 @@ void UMainMenu::QuitPressed()
 	if (!PlayerController) return;
 
 	PlayerController->ConsoleCommand("quit");
+}
+
+void UMainMenu::UpdateChildren()
+{
+	for (int32 i = 0; i<ServerList->GetChildrenCount(); i++)
+	{
+		UServerRow* Row = Cast<UServerRow>(ServerList->GetChildAt(i));
+		if (Row != nullptr)
+		{
+			Row->Selected = (SelectedIndex.IsSet() && SelectedIndex.GetValue() == i);
+		}
+	}
 }
 
